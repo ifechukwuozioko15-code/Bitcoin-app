@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stanley’s Bitcoin App</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      text-align: center;
+      font-family: Arial;
+      padding-top: 20px;
+    }
+    h1 {
+      color: orange;
+    }
+    #price {
+      font-size: 24px;
+      margin-top: 10px;
+    }
+    canvas {
+      margin-top: 20px;
+      background-color: #1e1e1e;
+      border: 1px solid orange;
+    }
+  </style>
+  <!-- Chart.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Hello, Stanley!</h1>
+  <p>Live Bitcoin Price</p>
+  <p id="price">Loading...</p>
+  <canvas id="btcChart" width="300" height="150"></canvas>
+
+  <script>
+    const ctx = document.getElementById('btcChart').getContext('2d');
+    const priceData = {
+      labels: [],
+      datasets: [{
+        label: 'BTC/USD',
+        data: [],
+        borderColor: 'orange',
+        backgroundColor: 'rgba(255, 165, 0, 0.2)',
+        tension: 0.3
+      }]
+    };
+    const btcChart = new Chart(ctx, {
+      type: 'line',
+      data: priceData,
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Time' } },
+          y: { title: { display: true, text: 'Price (USD)' } }
+        }
+      }
+    });
+
+    async function getBitcoinPrice() {
+      try {
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+        const data = await response.json();
+        const price = data.bitcoin.usd;
+        const now = new Date();
+        const timeLabel = now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds();
+        document.getElementById("price").innerText = "₿ " + price + " USD";
+
+        // Add new data point to chart
+        priceData.labels.push(timeLabel);
+        priceData.datasets[0].data.push(price);
+
+        // Keep only last 10 points
+        if(priceData.labels.length > 10){
+          priceData.labels.shift();
+          priceData.datasets[0].data.shift();
+        }
+
+        btcChart.update();
+      } catch (error) {
+        document.getElementById("price").innerText = "Error fetching price!";
+      }
+    }
+
+    // Fetch price immediately
+    getBitcoinPrice();
+    // Update every 10 seconds
+    setInterval(getBitcoinPrice, 10000);
+  </script>
+</body>
+</html>
